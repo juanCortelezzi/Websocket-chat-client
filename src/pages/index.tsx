@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useMain, useUser } from "@/context/contexts";
+import { User } from "types";
 
 function Home(): JSX.Element {
   const socket = useSocket();
@@ -20,7 +21,7 @@ function Home(): JSX.Element {
       socket.emit("ping", (id: string): void => {
         console.log(`pong (${Date.now() - start}ms) - ${id}`);
       });
-      socket.on("users", (users): void => {
+      socket.on("users", (users: User[]): void => {
         setUsers(users);
       });
     }
