@@ -1,8 +1,8 @@
 // ACTIVATE ON PROD
 // uncomment the first use effect and the second use effect's return
+import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
-// import { useRouter } from "next/router";
 import Link from "next/link";
 import Head from "next/head";
 import {
@@ -17,21 +17,25 @@ import {
 import { useSocket, useUser, useMain } from "@/context/contexts";
 import { RoomMessage, User } from "types";
 import ChatMessageRef from "@/components/chatMessage";
+import { AES, enc as CryptoEnc } from "crypto-js";
+import noLeadOrTrailWhites from "utils/sanitizer";
 
 export default function Chat(): JSX.Element {
+  const HARCODEDPASSWORD = "password";
   const socket = useSocket();
   const [users, setUsers] = useUser();
-  const [_name, room, _setName, _setRoom] = useMain();
-  // const router = useRouter();
+  const [name, room, setName, setRoom] = useMain();
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const chatRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-  // useEffect((): void => {
-  //   if (!name || !room) {
-  //     router.push("/");
-  //   }
-  // }, [name, room]);
+  useEffect((): void => {
+    if (!name || !room) {
+      setUsers([]);
+      router.push("/");
+    }
+  }, [name, room]);
 
   useEffect((): void => {
     if (chatRef.current) {
@@ -39,38 +43,47 @@ export default function Chat(): JSX.Element {
     }
   }, [messages]);
 
-  useEffect(() => {
+  useEffect((): (() => void) => {
     if (socket) {
       const start = Date.now();
       socket.emit("ping", (id: string): void => {
         console.log(`pong (${Date.now() - start}ms) - ${id}`);
       });
-      socket.on("users", (users): void => {
-        setUsers(users);
+      socket.on("users", (roomUsers): void => {
+        setUsers(roomUsers);
       });
       socket.on("notification", (noti): void => {
         console.log(noti.title, noti.description);
       });
-      socket.on("roomMessage", (msg: RoomMessage): void => {
-        console.log(`${msg.from} -> ${msg.message}`);
-        setMessages((msgs) => [...msgs, msg]);
+      socket.on("roomMessage", ({ from, message }: RoomMessage): void => {
+        const bytes = AES.decrypt(message, HARCODEDPASSWORD);
+        const decMessage = bytes.toString(CryptoEnc.Utf8);
+        setMessages((msgs): RoomMessage[] => [
+          ...msgs,
+          { from: from, message: decMessage },
+        ]);
       });
-      /* 
-        return (): void => {
-          socket.emit("logout", (): void => {
-            setName("");
-            setRoom("");
-            router.push("/");
-          });
-        };
-      */
+      return (): void => {
+        socket.emit("logout", (): void => {
+          socket.off("users");
+          socket.off("notification");
+          socket.off("roomMessage");
+          setName("");
+          setRoom("");
+          router.push("/");
+        });
+      };
     }
   }, [socket]);
 
   const handleLogin = (e: React.FormEvent): void => {
     e.preventDefault();
-    socket.emit("roomMessage", message);
-    setMessage("");
+    const sanitizedMsg = noLeadOrTrailWhites(message);
+    if (sanitizedMsg) {
+      const cyphertext = AES.encrypt(sanitizedMsg, HARCODEDPASSWORD).toString();
+      socket.emit("roomMessage", cyphertext);
+      setMessage("");
+    }
   };
 
   return (
@@ -115,7 +128,8 @@ export default function Chat(): JSX.Element {
                 <ChatMessageRef
                   ref={chatRef}
                   key={`chatMessage-${uuidv4()}`}
-                  msg={msg}
+                  from={msg.from}
+                  message={msg.message}
                 />
               )
             )}

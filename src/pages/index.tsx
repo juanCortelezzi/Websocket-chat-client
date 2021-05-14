@@ -1,10 +1,11 @@
 import { useSocket } from "@/context/socketContext";
-import Head from "next/head";
 import { Button, Input, VStack, Container, Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
+import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useMain, useUser } from "@/context/contexts";
+import noLeadOrTrailWhites from "utils/sanitizer";
 import { User } from "types";
 
 function Home(): JSX.Element {
@@ -21,27 +22,31 @@ function Home(): JSX.Element {
       socket.emit("ping", (id: string): void => {
         console.log(`pong (${Date.now() - start}ms) - ${id}`);
       });
-      socket.on("users", (users: User[]): void => {
-        setUsers(users);
+      socket.on("users", (roomUsers: User[]): void => {
+        setUsers(roomUsers);
       });
     }
   }, [socket]);
 
   function handleLogin(e: React.FormEvent): void {
     e.preventDefault();
-    socket.emit(
-      "login",
-      { name: localName, room: localRoom },
-      ({ error, user }): void => {
-        if (error || !user) {
-          console.log("something went wrong when signing up:", error);
-          return;
+    const sanitizedName = noLeadOrTrailWhites(localName);
+    const sanitizedRoom = noLeadOrTrailWhites(localRoom);
+    if (sanitizedName && sanitizedRoom) {
+      socket.emit(
+        "login",
+        { name: sanitizedName, room: sanitizedRoom },
+        ({ error, user }): void => {
+          if (error || !user) {
+            console.log("something went wrong when signing up:", error);
+          } else {
+            setName(user.name);
+            setRoom(user.room);
+            router.push("/chat");
+          }
         }
-        setName(user.name);
-        setRoom(user.room);
-        router.push("/chat");
-      }
-    );
+      );
+    }
   }
 
   return (
