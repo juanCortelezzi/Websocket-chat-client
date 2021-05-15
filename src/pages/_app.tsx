@@ -1,5 +1,5 @@
 import { AppProps } from "next/app";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, CSSReset } from "@chakra-ui/react";
 import {
   UsersProvider,
   SocketProvider,
@@ -12,6 +12,7 @@ function MyApp({ Component, pageProps }: AppProps): JSX.Element {
       <UsersProvider>
         <MainProvider>
           <ChakraProvider>
+            <CSSReset />
             <Component {...pageProps} />
           </ChakraProvider>
         </MainProvider>

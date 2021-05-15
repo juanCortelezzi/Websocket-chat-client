@@ -7,7 +7,6 @@ const endpoint =
   process.env.NODE_ENV === "development"
     ? "http://localhost:3001"
     : "https://socket-encrypted-chat.herokuapp.com/";
-console.log(endpoint);
 
 function SocketProvider({ children }): JSX.Element {
   const [socket, setSocket] = useState<Socket>();
