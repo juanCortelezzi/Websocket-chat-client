@@ -13,6 +13,7 @@ import {
   ListItem,
   Box,
   Flex,
+  Text,
 } from "@chakra-ui/react";
 import { useSocket, useUsers, useMain } from "@/context/contexts";
 import { RoomMessage, User } from "types";
@@ -21,17 +22,16 @@ import { AES, enc as CryptoEnc } from "crypto-js";
 import noLeadOrTrailWhites from "utils/sanitizer";
 
 export default function Chat(): JSX.Element {
-  const HARCODEDPASSWORD = "password";
   const socket = useSocket();
   const [users, setUsers] = useUsers();
-  const [name, room, setName, setRoom] = useMain();
+  const [name, room, pass, setName, setRoom, setPass] = useMain();
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const chatRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect((): void => {
-    if (!name || !room) {
+    if (!name || !room || !pass) {
       setUsers([]);
       router.push("/");
     }
@@ -56,7 +56,7 @@ export default function Chat(): JSX.Element {
         console.log(noti.title, noti.description);
       });
       socket.on("roomMessage", ({ from, message }: RoomMessage): void => {
-        const bytes = AES.decrypt(message, HARCODEDPASSWORD);
+        const bytes = AES.decrypt(message, pass);
         const decMessage = bytes.toString(CryptoEnc.Utf8);
         setMessages((msgs): RoomMessage[] => [
           ...msgs,
@@ -65,11 +65,11 @@ export default function Chat(): JSX.Element {
       });
       return (): void => {
         socket.emit("logout", (): void => {
-          socket.off("users");
           socket.off("notification");
           socket.off("roomMessage");
           setName("");
           setRoom("");
+          setPass("");
           router.push("/");
         });
       };
@@ -80,7 +80,7 @@ export default function Chat(): JSX.Element {
     e.preventDefault();
     const sanitizedMsg = noLeadOrTrailWhites(message);
     if (sanitizedMsg) {
-      const cyphertext = AES.encrypt(sanitizedMsg, HARCODEDPASSWORD).toString();
+      const cyphertext = AES.encrypt(sanitizedMsg, pass).toString();
       socket.emit("roomMessage", cyphertext);
       setMessage("");
     }
@@ -110,7 +110,9 @@ export default function Chat(): JSX.Element {
               }
             )}
           </UnorderedList>
-
+          <Text>
+            {name}-{room}-{pass}
+          </Text>
           <Link href="/">
             <a>home</a>
           </Link>

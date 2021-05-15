@@ -1,20 +1,58 @@
-import { useSocket } from "@/context/socketContext";
-import { Button, Input, VStack, Container, Heading } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useMain, useUsers } from "@/context/contexts";
+import {
+  Button,
+  Input,
+  VStack,
+  Container,
+  Heading,
+  Text,
+} from "@chakra-ui/react";
+import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import noLeadOrTrailWhites from "utils/sanitizer";
 import { User } from "types";
+import { useMain, useUsers, useSocket } from "@/context/contexts";
+import PasswordInput from "@/components/passwordInput";
+
+type FormValues = {
+  name: string;
+  room: string;
+  pass: string;
+};
 
 function Home(): JSX.Element {
   const socket = useSocket();
-  const [_users, setUsers] = useUsers();
-  const [name, room, setName, setRoom] = useMain();
   const router = useRouter();
-  const [localName, setLocalName] = useState<string>("");
-  const [localRoom, setLocalRoom] = useState<string>("");
+  const [_users, setUsers] = useUsers();
+  const [name, room, pass, setName, setRoom, setPass] = useMain();
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm();
+
+  const onSubmit: SubmitHandler<FormValues> = (data): void => {
+    const sanitizedName = noLeadOrTrailWhites(data.name);
+    const sanitizedRoom = noLeadOrTrailWhites(data.room);
+    socket.emit(
+      "login",
+      { name: sanitizedName, room: sanitizedRoom },
+      ({ error, user }): void => {
+        if (error || !user) {
+          console.log("something went wrong when signing up:", error);
+        } else {
+          setName(user.name);
+          setRoom(user.room);
+          setPass(data.pass);
+          reset({ name: "", room: "", pass: "" });
+          router.push("/chat");
+        }
+      }
+    );
+  };
 
   useEffect((): void => {
     const start = Date.now();
@@ -28,27 +66,6 @@ function Home(): JSX.Element {
     }
   }, [socket]);
 
-  function handleLogin(e: React.FormEvent): void {
-    e.preventDefault();
-    const sanitizedName = noLeadOrTrailWhites(localName);
-    const sanitizedRoom = noLeadOrTrailWhites(localRoom);
-    if (sanitizedName && sanitizedRoom) {
-      socket.emit(
-        "login",
-        { name: sanitizedName, room: sanitizedRoom },
-        ({ error, user }): void => {
-          if (error || !user) {
-            console.log("something went wrong when signing up:", error);
-          } else {
-            setName(user.name);
-            setRoom(user.room);
-            router.push("/chat");
-          }
-        }
-      );
-    }
-  }
-
   return (
     <Container>
       <Head>
@@ -61,27 +78,96 @@ function Home(): JSX.Element {
         as="form"
         spacing={4}
         align="stretch"
-        onSubmit={handleLogin}
+        onSubmit={handleSubmit(onSubmit)}
         my={4}
       >
-        <Input
-          placeholder="name"
-          value={localName}
-          onChange={(e): void => setLocalName(`${e.target.value}`)}
+        <Controller
+          name="name"
+          control={control}
+          defaultValue=""
+          rules={{
+            required: "Name is required",
+            validate: {
+              hasContent: (str: string): true | string =>
+                noLeadOrTrailWhites(str).length > 0 || "Use a real name!",
+            },
+            maxLength: {
+              value: 20,
+              message: "Name has to be less than 20 characters",
+            },
+          }}
+          render={({ field }): JSX.Element => (
+            <>
+              <Input
+                {...field}
+                placeholder="name"
+                errorBorderColor="crimson"
+                isInvalid={errors.name ? true : false}
+              />
+              {errors.name && errors.name.message}
+            </>
+          )}
         />
-        <Input
-          placeholder="room"
-          value={localRoom}
-          onChange={(e): void => setLocalRoom(`${e.target.value}`)}
+        <Controller
+          name="room"
+          control={control}
+          defaultValue=""
+          rules={{
+            required: "Room is required",
+            validate: {
+              hasContent: (str: string): true | string =>
+                noLeadOrTrailWhites(str).length > 0 || "Use a real name!",
+            },
+            maxLength: {
+              value: 20,
+              message: "Room has to be less than 20 characters",
+            },
+          }}
+          render={({ field }): JSX.Element => (
+            <>
+              <Input
+                {...field}
+                placeholder="room"
+                errorBorderColor="crimson"
+                isInvalid={errors.room ? true : false}
+              />
+              {errors.room && errors.room.message}
+            </>
+          )}
+        />
+        <Controller
+          name="pass"
+          control={control}
+          defaultValue=""
+          rules={{
+            required: "Password is required",
+            maxLength: {
+              value: 50,
+              message: "Password has to be less than 20 characters",
+            },
+            minLength: {
+              value: 6,
+              message: "Password has to be more than 6 characters",
+            },
+          }}
+          render={({ field }): JSX.Element => (
+            <>
+              <PasswordInput
+                field={field}
+                isInvalid={errors.pass ? true : false}
+              />
+              {errors.pass && errors.pass.message}
+            </>
+          )}
         />
         <Button type="submit" colorScheme="teal">
           Join
         </Button>
       </VStack>
 
-      <p>
-        {name ? name : "name"}@{room ? room : "room"}
-      </p>
+      <Text>
+        {name ? name : "name"}@{room ? room : "room"}:{pass ? pass : "password"}
+      </Text>
       <Link href="/chat">
         <a>chat</a>
       </Link>

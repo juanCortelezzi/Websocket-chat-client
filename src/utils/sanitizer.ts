@@ -1,5 +1,5 @@
 function noLeadOrTrailWhites(str: string): string {
-  const noLeadOrTrailWhites = /(^\s+|\s+$)/;
+  const noLeadOrTrailWhites = /(^\s+|\s+$)/g;
   return str.replace(noLeadOrTrailWhites, "");
 }
 
