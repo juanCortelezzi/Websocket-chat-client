@@ -4,7 +4,7 @@ import { io, Socket } from "socket.io-client";
 const SocketContext = createContext<Socket>(null);
 
 function SocketProvider({ children }): JSX.Element {
-  const endpoint = "http://localhost:3001";
+  const endpoint = process.env.ENDPOINT;
 
   const [socket, setSocket] = useState<Socket>();
 
