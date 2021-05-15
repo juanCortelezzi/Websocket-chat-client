@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useMain, useUser } from "@/context/contexts";
+import { useMain, useUsers } from "@/context/contexts";
 import noLeadOrTrailWhites from "utils/sanitizer";
 import { User } from "types";
 
 function Home(): JSX.Element {
   const socket = useSocket();
-  const [_users, setUsers] = useUser();
+  const [_users, setUsers] = useUsers();
   const [name, room, setName, setRoom] = useMain();
   const router = useRouter();
   const [localName, setLocalName] = useState<string>("");

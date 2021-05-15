@@ -1,19 +1,21 @@
 import { AppProps } from "next/app";
-import { SocketProvider } from "@/context/socketContext";
 import { ChakraProvider } from "@chakra-ui/react";
-import { MainProvider } from "@/context/mainContext";
-import { UserProvider } from "@/context/userContext";
+import {
+  UsersProvider,
+  SocketProvider,
+  MainProvider,
+} from "@/context/contexts";
 
 function MyApp({ Component, pageProps }: AppProps): JSX.Element {
   return (
     <SocketProvider>
-      <UserProvider>
+      <UsersProvider>
         <MainProvider>
           <ChakraProvider>
             <Component {...pageProps} />
           </ChakraProvider>
         </MainProvider>
-      </UserProvider>
+      </UsersProvider>
     </SocketProvider>
   );
 }

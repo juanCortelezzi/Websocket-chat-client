@@ -14,7 +14,7 @@ import {
   Box,
   Flex,
 } from "@chakra-ui/react";
-import { useSocket, useUser, useMain } from "@/context/contexts";
+import { useSocket, useUsers, useMain } from "@/context/contexts";
 import { RoomMessage, User } from "types";
 import ChatMessageRef from "@/components/chatMessage";
 import { AES, enc as CryptoEnc } from "crypto-js";
@@ -23,7 +23,7 @@ import noLeadOrTrailWhites from "utils/sanitizer";
 export default function Chat(): JSX.Element {
   const HARCODEDPASSWORD = "password";
   const socket = useSocket();
-  const [users, setUsers] = useUser();
+  const [users, setUsers] = useUsers();
   const [name, room, setName, setRoom] = useMain();
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<RoomMessage[]>([]);
