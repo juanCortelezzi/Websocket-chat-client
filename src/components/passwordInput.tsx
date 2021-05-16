@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { InputGroup, Input, InputRightElement, Button } from "@chakra-ui/react";
 
-export default function PasswordInput({ isInvalid, field }): JSX.Element {
+export default function PasswordInput({
+  isInvalid,
+  field,
+  placeholder,
+}): JSX.Element {
   const [show, setShow] = useState(false);
   const handleClick = (): void => setShow(!show);
 
@@ -11,7 +15,7 @@ export default function PasswordInput({ isInvalid, field }): JSX.Element {
         {...field}
         pr="4.5rem"
         type={show ? "text" : "password"}
-        placeholder="password"
+        placeholder={placeholder}
         errorBorderColor="crimson"
         isInvalid={isInvalid}
       />

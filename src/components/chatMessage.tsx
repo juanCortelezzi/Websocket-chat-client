@@ -12,18 +12,12 @@ const ChatMessageRef = forwardRef(
       <Box
         ref={ref}
         maxW="sm"
-        mt={1}
+        mt={2}
         alignSelf={from === name ? "flex-end" : "flex-start"}
       >
+        {from !== name && <Text fontSize="sm">{from}</Text>}
         <Text
-          fontSize="xs"
-          opacity=".7"
-          align={from === name ? "right" : "left"}
-        >
-          {from === name ? "you" : from}
-        </Text>
-        <Text
-          fontSize="sm"
+          fontSize="md"
           p=".4rem .8rem"
           borderRadius="15px"
           backgroundColor={from === name ? "teal.500" : "blue.500"}

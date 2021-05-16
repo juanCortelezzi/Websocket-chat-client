@@ -1,9 +1,7 @@
-// ACTIVATE ON PROD
-// uncomment the first use effect and the second use effect's return
 import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
-import Link from "next/link";
+import NextLink from "next/link";
 import Head from "next/head";
 import {
   Heading,
@@ -14,6 +12,7 @@ import {
   Box,
   Flex,
   Text,
+  useToast,
 } from "@chakra-ui/react";
 import { useSocket, useUsers, useMain } from "@/context/contexts";
 import { RoomMessage, User } from "types";
@@ -23,6 +22,7 @@ import noLeadOrTrailWhites from "utils/sanitizer";
 
 export default function Chat(): JSX.Element {
   const socket = useSocket();
+  const toast = useToast();
   const [users, setUsers] = useUsers();
   const [name, room, pass, setName, setRoom, setPass] = useMain();
   const [message, setMessage] = useState<string>("");
@@ -53,7 +53,13 @@ export default function Chat(): JSX.Element {
         setUsers(roomUsers);
       });
       socket.on("notification", (noti): void => {
-        console.log(noti.title, noti.description);
+        toast({
+          title: noti.title,
+          description: noti.description,
+          status: "success",
+          duration: 2500,
+          isClosable: true,
+        });
       });
       socket.on("roomMessage", ({ from, message }: RoomMessage): void => {
         const bytes = AES.decrypt(message, pass);
@@ -96,8 +102,15 @@ export default function Chat(): JSX.Element {
         <meta name="chat" content="Chat section from Next-chat" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Flex w="full" h="full">
-        <Box w="xs" borderRightWidth="1px" px={2}>
+      <Flex w="full" h="full" py={4}>
+        <Flex
+          direction="column"
+          justify="space-between"
+          align="center"
+          w="xs"
+          borderRightWidth="1px"
+          px={2}
+        >
           <Heading as="h1" size="lg">
             Users@{room}
           </Heading>
@@ -105,18 +118,20 @@ export default function Chat(): JSX.Element {
             {users.map(
               (user: User): JSX.Element => {
                 return (
-                  <ListItem key={`roomUsers-${user.id}`}>{user.name}</ListItem>
+                  <ListItem key={`roomUsers-${user.id}`}>
+                    {user.name}
+                    {user.name === name ? ` (you)` : ""}
+                  </ListItem>
                 );
               }
             )}
           </UnorderedList>
-          <Text>
-            {name}-{room}-{pass}
-          </Text>
-          <Link href="/">
-            <a>home</a>
-          </Link>
-        </Box>
+          <NextLink href="/">
+            <Button colorScheme="teal" variant="outline" isFullWidth>
+              Home
+            </Button>
+          </NextLink>
+        </Flex>
 
         <Flex
           w="full"
@@ -124,7 +139,7 @@ export default function Chat(): JSX.Element {
           flexDirection="column"
           justifyContent="space-between"
         >
-          <Flex direction="column" overflowY="scroll" grow={2}>
+          <Flex direction="column" overflowY="scroll" grow={2} pr={1}>
             {messages.map(
               (msg: RoomMessage): JSX.Element => (
                 <ChatMessageRef
@@ -136,9 +151,10 @@ export default function Chat(): JSX.Element {
               )
             )}
           </Flex>
-          <Flex as="form" onSubmit={handleLogin} my={4}>
+          <Flex as="form" onSubmit={handleLogin} mt={1}>
             <Input
               placeholder="message"
+              variant="filled"
               value={message}
               onChange={(e): void => setMessage(`${e.target.value}`)}
             />
